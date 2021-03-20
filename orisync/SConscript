@@ -28,6 +28,7 @@ libs = [
     "stdc++",
     "event_core",
     "event_extra",
+    "uuid"
 ]
 
 if sys.platform != "darwin":

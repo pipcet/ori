@@ -839,6 +839,7 @@ OriPriv::commitTreeHelper(const string &path)
         OriFileInfo *info = getFileInfo(objPath);
 
         if (info->type == FILETYPE_DIRTY) {
+	mustBeDirty:
             dirty = true;
         
             // Created or modified
@@ -882,6 +883,8 @@ OriPriv::commitTreeHelper(const string &path)
         } else {
             Tree::iterator oldEntry = oldTree.find(it->first);
 
+	    if (oldEntry == oldTree.end())
+	      goto mustBeDirty;
             ASSERT(oldEntry != oldTree.end());
             ASSERT(oldEntry->second.hasBasicAttrs());
             ASSERT(!oldEntry->second.hash.isEmpty());

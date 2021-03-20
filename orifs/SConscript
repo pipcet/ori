@@ -17,6 +17,7 @@ libs = [
     "oriutil",
     "fastlz",
     "crypto",
+    "uuid"
 ]
 
 orifs_env.ParseConfig('pkg-config --libs --cflags libevent')

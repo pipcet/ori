@@ -60,24 +60,6 @@ env = Environment(options = opts,
                   ENV = os.environ)
 Help(opts.GenerateHelpText(env))
 
-# Copy environment variables
-if os.environ.has_key('CC'):
-    env["CC"] = os.getenv('CC')
-if os.environ.has_key('CXX'):
-    env["CXX"] = os.getenv('CXX')
-if os.environ.has_key('AS'):
-    env["AS"] = os.getenv('AS')
-if os.environ.has_key('LD'):
-    env["LINK"] = os.getenv('LD')
-if os.environ.has_key('CFLAGS'):
-    env.Append(CCFLAGS = SCons.Util.CLVar(os.environ['CFLAGS']))
-if os.environ.has_key('CPPFLAGS'):
-    env.Append(CPPFLAGS = SCons.Util.CLVar(os.environ['CPPFLAGS']))
-if os.environ.has_key('CXXFLAGS'):
-    env.Append(CXXFLAGS = SCons.Util.CLVar(os.environ['CXXFLAGS']))
-if os.environ.has_key('LDFLAGS'):
-    env.Append(LINKFLAGS = SCons.Util.CLVar(os.environ['LDFLAGS']))
-
 # Windows Configuration Changes
 if sys.platform == "win32":
     env["WITH_FUSE"] = False
@@ -95,7 +77,6 @@ if sys.platform == "win32":
 if env["HASH_ALGO"] == "SHA256":
     env.Append(CPPFLAGS = [ "-DORI_USE_SHA256" ])
 else:
-    print "Error unsupported hash algorithm"
     sys.exit(-1)
 
 if env["COMPRESSION_ALGO"] == "LZMA":
@@ -104,10 +85,7 @@ elif env["COMPRESSION_ALGO"] == "FASTLZ":
     env.Append(CPPFLAGS = [ "-DORI_USE_FASTLZ" ])
 elif env["COMPRESSION_ALGO"] == "SNAPPY":
     env.Append(CPPFLAGS = [ "-DORI_USE_SNAPPY" ])
-elif env["COMPRESSION_ALGO"] == "NONE":
-    print "Building without compression"
 else:
-    print "Error unsupported compression algorithm"
     sys.exit(-1)
 
 if env["CHUNKING_ALGO"] == "RK":
@@ -115,7 +93,6 @@ if env["CHUNKING_ALGO"] == "RK":
 elif env["CHUNKING_ALGO"] == "FIXED":
     env.Append(CPPFLAGS = [ "-DORI_USE_FIXED" ])
 else:
-    print "Error unsupported chunking algorithm"
     sys.exit(-1)
 
 if not env["WITH_MDNS"]:
@@ -135,7 +112,6 @@ elif env["BUILDTYPE"] == "PERF":
 elif env["BUILDTYPE"] == "RELEASE":
     env.Append(CPPFLAGS = ["-DNDEBUG", "-DORI_RELEASE", "-w", "-O2"])
 else:
-    print "Error BUILDTYPE must be RELEASE or DEBUG"
     sys.exit(-1)
 
 try:
@@ -202,12 +178,10 @@ conf = env.Configure(custom_tests = { 'CheckPkgConfig' : CheckPkgConfig,
                                       'CheckPkgMinVersion' : CheckPkgMinVersion })
 
 if not conf.CheckCC():
-    print 'Your C compiler and/or environment is incorrectly configured.'
     CheckFailed()
 
 env.AppendUnique(CXXFLAGS = ['-std=c++11'])
 if not conf.CheckCXX():
-    print 'Your C++ compiler and/or environment is incorrectly configured.'
     CheckFailed()
 
 if (sys.platform == "win32") or env["CROSSCOMPILE"]:
@@ -215,15 +189,12 @@ if (sys.platform == "win32") or env["CROSSCOMPILE"]:
 else:
     env["HAS_PKGCONFIG"] = True
     if not conf.CheckPkgConfig():
-        print 'pkg-config not found!'
         Exit(1)
 
 if not conf.CheckCXXHeader('unordered_map'):
-    print 'C++11 libraries appear to be missing'
-
+    pass
 if sys.platform.startswith("freebsd"):
     if not conf.CheckLib('execinfo'):
-        print 'FreeBSD requires libexecinfo to build.'
         Exit(1)
 
 check_uuid_h = conf.CheckCHeader('uuid.h')
@@ -233,7 +204,6 @@ if check_uuid_h:
 elif check_uuid_uuid_h:
     env.Append(CPPFLAGS = "-DHAVE_UUID_UUID_H")
 else:
-    print 'Supported UUID header is missing!'
     Exit(1)
 
 if env["COMPRESSION_ALGO"] == "LZMA":
@@ -241,39 +211,31 @@ if env["COMPRESSION_ALGO"] == "LZMA":
                                    'lzma.h',
                                    'C',
                                    'lzma_version_string();'):
-        print 'Please install liblzma'
         Exit(1)
 
 if env["WITH_FUSE"]:
     if env["HAS_PKGCONFIG"] and not conf.CheckPkg('fuse'):
-        print 'FUSE is not registered in pkg-config'
         Exit(1)
 
 if env["HAS_PKGCONFIG"]:
     if not conf.CheckPkg('libevent'):
-        print 'libevent is not registered in pkg-config'
         Exit(1)
     if not conf.CheckPkgMinVersion("libevent", "2.0"):
-        print 'libevent version 2.0 or above required'
         Exit(1)
     env.ParseConfig('pkg-config --libs --cflags libevent')
 
 has_event = conf.CheckLibWithHeader('', 'event2/event.h', 'C', 'event_init();')
 if not (has_event or (env["CROSSCOMPILE"])):
-    print 'Cannot link test binary with libevent 2.0+'
     Exit(1)
 
 if (env["WITH_MDNS"]) and (sys.platform != "darwin"):
     if not conf.CheckLibWithHeader('dns_sd','dns_sd.h','C'):
-	print 'Please install libdns_sd'
-	Exit(1)
+        Exit(1)
 
 if env["HAS_PKGCONFIG"]:
     if not conf.CheckPkg("openssl"):
-        print 'openssl is not registered in pkg-config'
         Exit(1)
     if not conf.CheckPkgMinVersion("openssl", "1.0.0"):
-        print 'openssl version 1.0.0 or above required'
         Exit(1)
     env.ParseConfig('pkg-config --libs --cflags openssl')
 
@@ -313,7 +275,6 @@ if env["WITH_ASAN"]:
     env.Append(CPPFLAGS = ["-fsanitize=address"])
     env.Append(LINKFLAGS = ["-fsanitize=address"])
 if env["WITH_TSAN"] and env["WITH_ASAN"]:
-    print "Cannot set both WITH_TSAN and WITH_ASAN!"
     sys.exit(-1)
 
 # libori
